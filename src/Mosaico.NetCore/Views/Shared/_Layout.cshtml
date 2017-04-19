@@ -1,0 +1,11 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    @RenderSection("HeadContent", required: false)
+    @Html.ApplicationInsightsJavaScript(TelemetryConfiguration)
+</head>
+<body class="@ViewBag.BodyClass" style="@ViewBag.BodyStyle">
+    @RenderBody()
+    @RenderSection("FootContent", required: false)
+</body>
+</html>
