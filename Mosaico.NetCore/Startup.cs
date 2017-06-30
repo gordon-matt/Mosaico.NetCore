@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Mosaico.NetCore.Configuration;
 using Mosaico.NetCore.Data;
 using Mosaico.NetCore.Models;
 using Mosaico.NetCore.Services;
@@ -52,6 +53,8 @@ namespace Mosaico.NetCore
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
+
+            services.Configure<SmtpOptions>(Configuration.GetSection("Smtp"));
 
             services.AddMvc();
 

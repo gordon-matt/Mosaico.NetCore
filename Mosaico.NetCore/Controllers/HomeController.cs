@@ -7,19 +7,28 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using MimeKit;
+using MimeKit.Text;
+using Mosaico.NetCore.Configuration;
 using Mosaico.NetCore.Helpers;
 
 namespace Mosaico.NetCore.Controllers
 {
     public class HomeController : Controller
     {
-        private IHostingEnvironment hostingEnvironment;
+        private readonly IHostingEnvironment hostingEnvironment;
+        private readonly IOptions<SmtpOptions> smtpOptions;
 
-        public HomeController(IHostingEnvironment hostingEnvironment)
+        public HomeController(
+            IHostingEnvironment hostingEnvironment,
+            IOptions<SmtpOptions> smtpOptions)
         {
             this.hostingEnvironment = hostingEnvironment;
+            this.smtpOptions = smtpOptions;
         }
 
         [Route("")]
@@ -36,7 +45,12 @@ namespace Mosaico.NetCore.Controllers
 
         [HttpPost]
         [Route("mosaico/dl")]
-        public async Task<IActionResult> Download(string action, string filename, string html)
+        public async Task<IActionResult> Download(
+            string action,
+            string filename,
+            string rcpt,
+            string subject,
+            string html)
         {
             switch (action)
             {
@@ -46,6 +60,26 @@ namespace Mosaico.NetCore.Controllers
                         return File(bytes, "text/html", filename);
                     }
                 case "email":
+                    {
+                        var message = new MimeMessage
+                        {
+                            Subject = subject,
+                            Body = new TextPart(TextFormat.Html) { Text = html }
+                        };
+
+                        message.From.Add(new MailboxAddress(smtpOptions.Value.FromName, smtpOptions.Value.FromEmail));
+                        message.To.Add(new MailboxAddress(rcpt));
+
+                        using (var smtpClient = new SmtpClient())
+                        {
+                            await smtpClient.ConnectAsync(smtpOptions.Value.Host, smtpOptions.Value.Port, false);
+                            await smtpClient.AuthenticateAsync(smtpOptions.Value.UserName, smtpOptions.Value.Password);
+                            await smtpClient.SendAsync(message);
+                            await smtpClient.DisconnectAsync(true);
+                        }
+
+                        return Ok();
+                    }
                 default: throw new ArgumentException("Unsuported action type: " + action);
             }
         }
@@ -93,7 +127,7 @@ namespace Mosaico.NetCore.Controllers
                     {
                         await file.CopyToAsync(stream);
                         var image = Bitmap.FromStream(stream);
-                        var thumbnail = ImageHelper.ResizeImage(image, 120, 90);
+                        var thumbnail = ImageHelper.Resize(image, 120, 90);
                         thumbnail.Save(thumbPath);
                     }
 
@@ -115,7 +149,7 @@ namespace Mosaico.NetCore.Controllers
 
         [HttpDelete]
         [Route("mosaico/delete/{fileName}")]
-        public async Task<IActionResult> Delete(string fileName)
+        public IActionResult Delete(string fileName)
         {
             string filePath = Path.Combine(hostingEnvironment.WebRootPath, "Media/Uploads", fileName);
 
@@ -134,30 +168,54 @@ namespace Mosaico.NetCore.Controllers
 
             switch (method)
             {
+                case "cover":
                 case "resize":
                     {
                         string filePath = Path.Combine(hostingEnvironment.WebRootPath, src.TrimStart(new[] { '/' }));
                         byte[] bytes = System.IO.File.ReadAllBytes(filePath);
 
-                        Bitmap resizedImage;
+                        Image result;
                         using (var stream = new MemoryStream(bytes))
                         {
                             var image = Bitmap.FromStream(stream);
 
-                            int width = split[0] == "null" ? image.Width : int.Parse(split[0]);
-                            int height = split[1] == "null" ? image.Height : int.Parse(split[1]);
+                            int? destinationWidth = split[0] == "null" ? null : (int?)int.Parse(split[0]);
+                            int? destinationHeight = split[1] == "null" ? null : (int?)int.Parse(split[1]);
 
-                            resizedImage = ImageHelper.ResizeImage(image, width, height);
+                            if (destinationWidth.HasValue && destinationHeight.HasValue)
+                            {
+                                if (method == "cover")
+                                {
+                                    result = ImageHelper.Crop(image, destinationWidth.Value, destinationHeight.Value, AnchorPosition.Center);
+                                }
+                                else
+                                {
+                                    result = ImageHelper.Resize(image, destinationWidth.Value, destinationHeight.Value);
+                                }
+                            }
+                            else if (destinationWidth.HasValue)
+                            {
+                                var newHeight = destinationWidth.Value * image.Height / image.Width;
+                                result = ImageHelper.Resize(image, destinationWidth.Value, newHeight);
+                            }
+                            else if (destinationHeight.HasValue)
+                            {
+                                var newWidth = destinationHeight.Value * image.Width / image.Height;
+                                result = ImageHelper.Resize(image, newWidth, destinationHeight.Value);
+                            }
+                            else
+                            {
+                                throw new ArgumentException("A destination width and/or height must be specified.");
+                            }
                         }
 
                         using (var memoryStream = new MemoryStream())
                         {
-                            resizedImage.Save(memoryStream, ImageFormat.Jpeg);
+                            result.Save(memoryStream, ImageFormat.Jpeg);
                             byte[] newBytes = memoryStream.ToArray();
                             return File(newBytes, "image/jpg");
                         }
                     }
-                case "cover": //TODO
                 case "placeholder":
                 default:
                     {
