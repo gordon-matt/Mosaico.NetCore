@@ -11,6 +11,13 @@
   <PropertyGroup>
     <UserSecretsId>aspnet-Mosaico.NetCore-d285ccce-2d13-429f-8430-8c5c8a9e508f</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="wwwroot\css\mosaico-index.css" />
+    <Content Include="wwwroot\js\mosaico-index.js" />
+    <Content Include="wwwroot\templates\versafix-1\img\social_def\google_plus_bw_ok.png" />
+    <Content Include="wwwroot\templates\versafix-1\img\social_def\google_plus_ok.png" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CoreCompat.System.Drawing" Version="1.0.0-beta006" />
     <PackageReference Include="MailKit" Version="1.16.1" />

@@ -12,7 +12,7 @@
         {
             mappings = new Lazy<Dictionary<string, string>>(() =>
             {
-                return new Dictionary<string, string>
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     { ".323", "text/h323" },
                     { ".aaf", "application/octet-stream" },

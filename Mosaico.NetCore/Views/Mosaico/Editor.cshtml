@@ -1,14 +1,15 @@
 ﻿@{ 
+    Layout = "_LayoutMosaico";
     ViewBag.BodyClass = "mo-standalone";
     ViewBag.BodyStyle = "";
 }
 
 @section HeadContent{
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=1024, initial-scale=1">
-    <link rel="canonical" href="http://mosaico.io" />
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+    <link rel="stylesheet" href="/mosaico/mosaico-material.min.css" />
+    <link rel="stylesheet" href="/mosaico/vendor/notoregular/stylesheet.css" />
+
     <script src="/mosaico/vendor/jquery.min.js"></script>
     <script src="/mosaico/vendor/knockout.js"></script>
     <script src="/mosaico/vendor/jquery-ui.min.js"></script>
@@ -22,7 +23,7 @@
     <script src="/mosaico/vendor/jquery.fileupload-validate.js"></script>
     <script src="/mosaico/vendor/knockout-jqueryui.min.js"></script>
     <script src="/mosaico/vendor/tinymce.min.js"></script>
-    <script src="/mosaico/mosaico.min.js?v=0.16"></script>
+    <script src="/mosaico/mosaico.min.js"></script>
     <script>
         $(function () {
             if (!Mosaico.isCompatible()) {
@@ -34,7 +35,12 @@
             //if (basePath.lastIndexOf('#') > 0) basePath = basePath.substr(0, basePath.lastIndexOf('#'));
             //if (basePath.lastIndexOf('?') > 0) basePath = basePath.substr(0, basePath.lastIndexOf('?'));
             //if (basePath.lastIndexOf('/') > 0) basePath = basePath.substr(0, basePath.lastIndexOf('/'));
-            var basePath = '/mosaico';
+
+            // Full URL required for /dl (download and email test). Otherwise the links don't work.
+            var url = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port : '');
+            console.log(url);
+
+            var basePath = url + '/mosaico';
             var plugins;
             // A basic plugin that expose the "viewModel" object as a global variable.
             // plugins = [function(vm) {window.viewModel = vm;}];
@@ -53,7 +59,4 @@
             }
         });
     </script>
-
-    <link rel="stylesheet" href="/mosaico/mosaico-material.min.css?v=0.10" />
-    <link rel="stylesheet" href="/mosaico/vendor/notoregular/stylesheet.css" />
 }

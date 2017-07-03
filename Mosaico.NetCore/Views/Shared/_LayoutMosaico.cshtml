@@ -1,0 +1,17 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <link rel="canonical" href="http://mosaico.io" />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    @RenderSection("HeadContent", required: false)
+    @*@Html.ApplicationInsightsJavaScript(TelemetryConfiguration)*@
+</head>
+<body class="@ViewBag.BodyClass" style="@ViewBag.BodyStyle">
+    @RenderBody()
+    @RenderSection("FootContent", required: false)
+</body>
+</html>
