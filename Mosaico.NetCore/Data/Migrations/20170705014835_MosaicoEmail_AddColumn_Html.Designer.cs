@@ -9,9 +9,10 @@ using Mosaico.NetCore.Models;
 namespace Mosaico.NetCore.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20170705014835_MosaicoEmail_AddColumn_Html")]
+    partial class MosaicoEmail_AddColumn_Html
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.2")

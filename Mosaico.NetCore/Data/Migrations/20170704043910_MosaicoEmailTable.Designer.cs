@@ -9,9 +9,10 @@ using Mosaico.NetCore.Models;
 namespace Mosaico.NetCore.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20170704043910_MosaicoEmailTable")]
+    partial class MosaicoEmailTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.2")
@@ -180,10 +181,6 @@ namespace Mosaico.NetCore.Data.Migrations
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("Content")
-                        .IsRequired()
-                        .IsUnicode(true);
-
-                    b.Property<string>("Html")
                         .IsRequired()
                         .IsUnicode(true);
 

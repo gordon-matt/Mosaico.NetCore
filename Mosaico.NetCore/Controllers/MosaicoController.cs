@@ -10,25 +10,31 @@ using System.Threading.Tasks;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using MimeKit.Text;
 using Mosaico.NetCore.Configuration;
+using Mosaico.NetCore.Data;
 using Mosaico.NetCore.Extensions;
 using Mosaico.NetCore.Helpers;
+using Mosaico.NetCore.Models;
 
 namespace Mosaico.NetCore.Controllers
 {
     [Route("mosaico")]
     public class MosaicoController : Controller
     {
+        private readonly ApplicationDbContext context;
         private readonly IHostingEnvironment hostingEnvironment;
         private readonly IOptions<SmtpOptions> smtpOptions;
 
         public MosaicoController(
+            ApplicationDbContext context,
             IHostingEnvironment hostingEnvironment,
             IOptions<SmtpOptions> smtpOptions)
         {
+            this.context = context;
             this.hostingEnvironment = hostingEnvironment;
             this.smtpOptions = smtpOptions;
         }
@@ -36,15 +42,32 @@ namespace Mosaico.NetCore.Controllers
         [Route("")]
         public IActionResult Index()
         {
+            // TODO: Obviously in a real situation we need to have paging.
+            //  But for demo purposes, this will do...
+            var model = context.MosaicoEmails.ToList();
             ViewBag.Title = "Free responsive email template editor | Mosaico.io";
-            return View();
+            return View(model);
         }
 
-        [Route("editor")]
-        public IActionResult Editor()
+        [Route("editor/{name}/{template}/{id?}")]
+        public async Task<IActionResult> Editor(string name, MosaicoTemplate template, int id = 0)
         {
+            MosaicoEmail model;
+            if (id > 0)
+            {
+                model = await context.MosaicoEmails.FirstOrDefaultAsync(x => x.Id == id);
+            }
+            else
+            {
+                model = new MosaicoEmail
+                {
+                    Name = name,
+                    Template = template
+                };
+            }
+
             ViewBag.Title = "Mosaico Editor";
-            return View();
+            return View(model);
         }
 
         [HttpPost]
@@ -101,7 +124,7 @@ namespace Mosaico.NetCore.Controllers
                 Type = MimeMapping.GetMimeMapping(x.Name),
                 Url = Url.AbsoluteContent(string.Concat("/Media/Uploads/", x.Name)),
                 ThumbnailUrl = Url.AbsoluteContent(string.Concat("/Media/Thumbs/", x.Name)),
-                DeleteUrl = string.Concat("/mosaico/delete/", x.Name),
+                DeleteUrl = string.Concat("/mosaico/img-delete/", x.Name),
                 DeleteType = "DELETE"
             });
 
@@ -142,27 +165,13 @@ namespace Mosaico.NetCore.Controllers
                         Type = MimeMapping.GetMimeMapping(file.FileName),
                         Url = Url.AbsoluteContent(string.Concat("/Media/Uploads/", file.FileName)),
                         ThumbnailUrl = Url.AbsoluteContent(string.Concat("/Media/Thumbs/", file.FileName)),
-                        DeleteUrl = string.Concat("/mosaico/delete/", file.FileName),
+                        DeleteUrl = string.Concat("/mosaico/img-delete/", file.FileName),
                         DeleteType = "DELETE"
                     });
                 }
             }
 
             return Ok(new { files = returnList });
-        }
-
-        [HttpDelete]
-        [Route("delete/{fileName}")]
-        public IActionResult Delete(string fileName)
-        {
-            string filePath = Path.Combine(hostingEnvironment.WebRootPath, "Media/Uploads", fileName);
-
-            if (System.IO.File.Exists(filePath))
-            {
-                System.IO.File.Delete(filePath);
-            }
-
-            return Ok();
         }
 
         [Route("img")]
@@ -233,6 +242,68 @@ namespace Mosaico.NetCore.Controllers
                             return File(bytes, "image/jpg");
                         }
                     }
+            }
+        }
+
+        [HttpDelete]
+        [Route("img-delete/{fileName}")]
+        public IActionResult Delete(string fileName)
+        {
+            string filePath = Path.Combine(hostingEnvironment.WebRootPath, "Media/Uploads", fileName);
+
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
+
+            return Ok();
+        }
+
+        [HttpPost]
+        [Route("save")]
+        public async Task<IActionResult> Save(
+            int id,
+            string name,
+            MosaicoTemplate template,
+            string metadata,
+            string content,
+            string html)
+        {
+            try
+            {
+                var record = await context.MosaicoEmails.FirstOrDefaultAsync(x => x.Id == id);
+
+                bool isNew = (record == null);
+
+                if (isNew)
+                {
+                    record = new MosaicoEmail();
+                }
+
+                record.Name = name;
+                record.Template = template;
+                record.Metadata = metadata;
+                record.Content = content;
+                // Save the HTML so we can use it for mass emailing. Example: User will input tokens like {FirstName}, {LastName}, etc into the template,
+                //  then we can do a search and replace with regex when sending emails (Your own logic, somewhere in your app).
+                record.Html = html;
+
+                if (isNew)
+                {
+                    await context.MosaicoEmails.AddAsync(record);
+                }
+                else
+                {
+                    context.MosaicoEmails.Update(record);
+                }
+
+                await context.SaveChangesAsync();
+
+                return Ok(new { Success = true, Message = "Sucessfully saved email." });
+            }
+            catch (Exception x)
+            {
+                return Json(new { Success = false, Message = x.GetBaseException().Message });
             }
         }
 

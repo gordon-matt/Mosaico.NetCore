@@ -1,7 +1,28 @@
-﻿@{ 
+﻿@model MosaicoEmail
+
+@{ 
     Layout = "_LayoutMosaico";
     ViewBag.BodyClass = "mo-standalone";
     ViewBag.BodyStyle = "";
+
+    string templatePath;
+
+    switch (Model.Template)
+    {
+        case MosaicoTemplate.TEDC15: templatePath = "/templates/tedc15/template-tedc15.html"; break;
+        case MosaicoTemplate.Tutorial: templatePath = "/templates/tutorial/template-tutorial.html"; break;
+        case MosaicoTemplate.Versafix1:
+        default: templatePath = "/templates/versafix-1/template-versafix-1.html"; break;
+    }
+
+    string metadata = null;
+    string content = null;
+
+    if (Model.Id > 0)
+    {
+        metadata = Model.Metadata;
+        content = Model.Content;
+    }
 }
 
 @section HeadContent{
@@ -30,33 +51,83 @@
                 alert('Update your browser!');
                 return;
             }
-            // var basePath = window.location.href.substr(0, window.location.href.lastIndexOf('/')).substr(window.location.href.indexOf('/','https://'.length));
-            //var basePath = window.location.href;
-            //if (basePath.lastIndexOf('#') > 0) basePath = basePath.substr(0, basePath.lastIndexOf('#'));
-            //if (basePath.lastIndexOf('?') > 0) basePath = basePath.substr(0, basePath.lastIndexOf('?'));
-            //if (basePath.lastIndexOf('/') > 0) basePath = basePath.substr(0, basePath.lastIndexOf('/'));
-
             // Full URL required for /dl (download and email test). Otherwise the links don't work.
             var url = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port : '');
-            console.log(url);
 
             var basePath = url + '/mosaico';
             var plugins;
-            // A basic plugin that expose the "viewModel" object as a global variable.
-            // plugins = [function(vm) {window.viewModel = vm;}];
-            var ok = Mosaico.init({
+
+            plugins = [
+                function (viewModel) {
+                    var saveCmd = {
+                        name: 'Save',
+                        enabled: ko.observable(true)
+                    };
+
+                    saveCmd.execute = function () {
+                        saveCmd.enabled(false);
+                        viewModel.metadata.changed = Date.now();
+                        if (typeof viewModel.metadata.key == 'undefined') {
+                            var rnd = Math.random().toString(36).substr(2, 7);
+                            viewModel.metadata.key = rnd;
+                        }
+
+                        var postData = {
+                            //csrf_token: 'yourCsrfValueHere', // this is only required if your back-end requires csrf token
+                            id: @Model.Id,
+                            name: '@Model.Name', //TODO (Provide input box for user to give name to template) - better yet: provide name from previous screen, which should be a grid showing existing templates to edit or a button to create a new one
+                            template: @((byte)Model.Template),
+                            metadata: viewModel.exportMetadata(),
+                            content: viewModel.exportJSON(),
+                            html: viewModel.exportHTML()
+                        };
+
+                        $.post('/mosaico/save', postData)
+                            .done(function () {
+                                viewModel.notifier.success(viewModel.t('Successfully saved.'));
+                            })
+                            .fail(function (jqXHR, textStatus, error) {
+                                console.log(textStatus);
+                                console.log(error);
+                                console.log(jqXHR);
+                                viewModel.notifier.error(viewModel.t('Saving failed. Please try again in a few moments or contact us.'));
+                            })
+                            .always(function () {
+                                saveCmd.enabled(true);
+                            });
+                    };
+
+                    viewModel.save = saveCmd;
+                },
+            ];
+
+            @if (string.IsNullOrEmpty(metadata))
+            {
+                @:var metadata = undefined;
+            }
+            else
+            {
+                @:var metadata = ko.utils.parseJson('@Html.Raw(metadata.Replace(@"\", @"\\"))');
+            }
+
+            @if (string.IsNullOrEmpty(content))
+            {
+                @:var content = undefined;
+            }
+            else
+            {
+                @:var content = ko.utils.parseJson('@Html.Raw(content.Replace(@"\", @"\\"))');
+            }
+            
+            Mosaico.start({
                 imgProcessorBackend: basePath + '/img/',
                 emailProcessorBackend: basePath + '/dl/',
                 titleToken: "MOSAICO Responsive Email Designer",
+                //onSave: function (saveObject) { alert('hi'); },
                 fileuploadConfig: {
-                    url: basePath + '/upload/',
-                    // messages??
+                    url: basePath + '/upload/'
                 }
-            }, plugins);
-            if (!ok) {
-                console.log("Missing initialization hash, redirecting to main entrypoint");
-                document.location = ".";
-            }
+            }, '@templatePath', metadata, content, plugins);
         });
     </script>
 }

@@ -57,7 +57,8 @@ viewModel.newEdit = function (shorttmplname) {
     var rnd = Math.random().toString(36).substr(2, 7);
     var template = '/templates/' + shorttmplname + '/template-' + shorttmplname;
     viewModel.edits.unshift({ created: Date.now(), key: rnd, name: shorttmplname, template: template });
-    document.location = 'mosaico/editor#' + rnd;
+    //document.location = '/mosaico/editor#' + rnd;
+    document.location = '/mosaico/editor';
     // { data: 'AAAA-MM-GG', key: 'ABCDE' }
     // viewModel.edits.push(template);
 };

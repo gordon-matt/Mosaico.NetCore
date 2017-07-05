@@ -56,11 +56,17 @@ namespace Mosaico.NetCore
 
             services.Configure<SmtpOptions>(Configuration.GetSection("Smtp"));
 
-            services.AddMvc();
-
             // Add application services.
             services.AddTransient<IEmailSender, AuthMessageSender>();
             services.AddTransient<ISmsSender, AuthMessageSender>();
+
+            services.AddRouting((p) =>
+            {
+                p.AppendTrailingSlash = true;
+                p.LowercaseUrls = true;
+            });
+
+            services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
