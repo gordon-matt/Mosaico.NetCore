@@ -271,7 +271,7 @@ namespace Mosaico.NetCore.Controllers
         {
             try
             {
-                var record = await context.MosaicoEmails.FirstOrDefaultAsync(x => x.Id == id);
+                var record = await context.MosaicoEmails.FindAsync(id);
 
                 bool isNew = (record == null);
 

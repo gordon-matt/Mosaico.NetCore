@@ -1,9 +1,7 @@
 ﻿@model MosaicoEmail
 
-@{ 
-    Layout = "_LayoutMosaico";
-    ViewBag.BodyClass = "mo-standalone";
-    ViewBag.BodyStyle = "";
+@{
+    Layout = null;
 
     string templatePath;
 
@@ -25,7 +23,16 @@
     }
 }
 
-@section HeadContent{
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <link rel="canonical" href="http://mosaico.io" />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
     <meta name="viewport" content="width=1024, initial-scale=1">
 
     <link rel="stylesheet" href="/mosaico/mosaico-material.min.css" />
@@ -118,7 +125,7 @@
             {
                 @:var content = ko.utils.parseJson('@Html.Raw(content.Replace(@"\", @"\\"))');
             }
-            
+
             Mosaico.start({
                 imgProcessorBackend: basePath + '/img/',
                 emailProcessorBackend: basePath + '/dl/',
@@ -130,4 +137,7 @@
             }, '@templatePath', metadata, content, plugins);
         });
     </script>
-}
+</head>
+<body class="mo-standalone">
+</body>
+</html>
