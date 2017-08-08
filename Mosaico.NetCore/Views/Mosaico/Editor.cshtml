@@ -21,6 +21,8 @@
         metadata = Model.Metadata;
         content = Model.Content;
     }
+
+    var fieldTokens = (IDictionary<string, string>)ViewBag.FieldTokens;
 }
 
 <!DOCTYPE html>
@@ -38,7 +40,10 @@
     <link rel="stylesheet" href="/mosaico/mosaico-material.min.css" />
     <link rel="stylesheet" href="/mosaico/vendor/notoregular/stylesheet.css" />
 
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
     <script src="/mosaico/vendor/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="/mosaico/vendor/knockout.js"></script>
     <script src="/mosaico/vendor/jquery-ui.min.js"></script>
     <script src="/mosaico/vendor/jquery.ui.touch-punch.min.js"></script>
@@ -52,6 +57,7 @@
     <script src="/mosaico/vendor/knockout-jqueryui.min.js"></script>
     <script src="/mosaico/vendor/tinymce.min.js"></script>
     <script src="/mosaico/mosaico.min.js"></script>
+
     <script>
         $(function () {
             if (!Mosaico.isCompatible()) {
@@ -105,6 +111,16 @@
                     };
 
                     viewModel.save = saveCmd;
+
+                    var insertTokenCmd = {
+                        name: 'Tokens',
+                        enabled: ko.observable(true)
+                    };
+
+                    insertTokenCmd.execute = function () {
+                    };
+
+                    viewModel.insertTokens = insertTokenCmd;
                 },
             ];
 
@@ -135,9 +151,50 @@
                     url: basePath + '/upload/'
                 }
             }, '@templatePath', metadata, content, plugins);
+
+            setTimeout(function () {
+                var tokensButtonHtml = '<a title="Show Field Tokens" href="javascript:void(0)" onclick="showTokens();" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-primary" role="button"><span class="ui-button-icon-primary ui-icon fa fa-fw fa-i-cursor"></span><span class="ui-button-text">Tokens</span></a>';
+                $(".rightButtons").append(tokensButtonHtml);
+            }, 3000);
+            
         });
+
+        function showTokens() {
+            $("#tokens-modal").modal('show');
+        };
+
+        function insertToken(token) {
+            $("#tokens-modal").modal('hide');
+            tinymce.activeEditor.execCommand('mceInsertContent', false, '[[' + token + ']]');
+        };
     </script>
 </head>
 <body class="mo-standalone">
+
+    <div class="modal fade" id="tokens-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Field Tokens</h4>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group">
+                        @foreach (var keyValue in fieldTokens)
+                        {
+                            <li class="list-group-item">
+                                <a href="javascript:void(0);" onclick="insertToken('@keyValue.Key');">@keyValue.Value</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

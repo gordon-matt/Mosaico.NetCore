@@ -1,4 +1,6 @@
-﻿namespace Mosaico.NetCore.Models
+﻿using System.Collections.Generic;
+
+namespace Mosaico.NetCore.Models
 {
     public class MosaicoEmail
     {

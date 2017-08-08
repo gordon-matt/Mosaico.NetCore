@@ -67,6 +67,15 @@ namespace Mosaico.NetCore.Controllers
             }
 
             ViewBag.Title = "Mosaico Editor";
+
+            // TODO: Add your own tokens here
+            ViewBag.FieldTokens = new Dictionary<string, string>
+            {
+                { "Title", "Title" },
+                { "FirstName", "First Name" },
+                { "LastName", "Last Name" },
+            };
+
             return View(model);
         }
 
