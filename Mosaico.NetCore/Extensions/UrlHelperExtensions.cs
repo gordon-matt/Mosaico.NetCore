@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Mosaico.NetCore.Controllers;
 
 namespace Mosaico.NetCore.Extensions
 {
@@ -52,6 +53,24 @@ namespace Mosaico.NetCore.Extensions
             object routeValues = null)
         {
             return url.RouteUrl(routeName, routeValues, url.ActionContext.HttpContext.Request.Scheme);
+        }
+
+        public static string EmailConfirmationLink(this IUrlHelper urlHelper, string userId, string code, string scheme)
+        {
+            return urlHelper.Action(
+                action: nameof(AccountController.ConfirmEmail),
+                controller: "Account",
+                values: new { userId, code },
+                protocol: scheme);
+        }
+
+        public static string ResetPasswordCallbackLink(this IUrlHelper urlHelper, string userId, string code, string scheme)
+        {
+            return urlHelper.Action(
+                action: nameof(AccountController.ResetPassword),
+                controller: "Account",
+                values: new { userId, code },
+                protocol: scheme);
         }
     }
 }
